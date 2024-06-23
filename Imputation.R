@@ -1,34 +1,53 @@
 ########### Utility Function ##########
 # Function to install and load packages
 install_and_load <- function() {
-  packages <- c("missForest", "mice", "Amelia", "dplyr", 
-                "performanceEstimation", "pcaMethods", 
-                "mixgb", "softImpute", "missMDA", "MCSim", "ClustImpute")
-  
-  # Check for missing packages
-  missing_packages <- packages[!(packages %in% installed.packages()[, "Package"])]
-  
-  # Install missing packages
-  if (length(missing_packages) > 0) {
-    install.packages(missing_packages, dependencies = TRUE)
+  packages <- c(
+    "NCmisc",
+    "missForest",
+    "performanceEstimation",
+    "BiocManager",
+    "Amelia",
+    "mixgb",
+    "MCSim",
+    "softImpute",
+    "parallel",
+    "doParallel"
+  )
+  install.packages(packages, dependencies = TRUE)
+  if (!requireNamespace("ClustImpute", quietly = TRUE) || !requireNamespace("missMDA", quietly = TRUE)) {
+    install.packages(c("ClustImpute", "missMDA"))
+    library(missMDA)
+    library(ClustImpute)
   }
+  if (!require("mice", character.only = TRUE)) {
+    install.packages("https://cran.r-project.org/src/contrib/Archive/mice/mice_3.14.0.tar.gz", repos = NULL, type = "source")
+    library(mice)
+  }
+  if (!require("pcaMethods", character.only = TRUE)) {
+    BiocManager::install("pcaMethods")
+    library(pcaMethods)
+  }
+  library(parallel)
+  library(doParallel)
   
-  # Load all packages
-  sapply(packages, require, character.only = TRUE)
 }
 
 ################# Imputation Function ###################
 multi_impute <- function(data,file_ref){
+  # Set up a cluster with as many cores as available
+  cl <- makeCluster(detectCores())
+  registerDoParallel(cl)
+  
   # 1) Miss Forest Imputation
   file_name <- paste("missforest_imp_",".csv", sep = file_ref)
-  imputed_data <- missForest(data,maxiter = 10,ntree = 250)
+  imputed_data <- missForest(data)
   write.csv(imputed_data$ximp, file=file_name)
   
   # 2) Mice - Cart Imputation
-  file_name <- paste("mice_imp_",".csv", sep = file_ref)
-  imputed_data <-  mice(data, method="cart")
-  completed_dataset <- complete(imputed_data)
-  write.csv(completed_dataset,file=file_name)
+  #file_name <- paste("mice_imp_",".csv", sep = file_ref)
+  #imputed_data <-  mice(data, method="lasso.norm")
+  #completed_dataset <- complete(imputed_data)
+  #write.csv(completed_dataset,file=file_name)
   
   # 3) Amelia
   file_name <- paste("amelia_imp_",".csv", sep = file_ref)
@@ -73,34 +92,40 @@ multi_impute <- function(data,file_ref){
   write.csv(s_dataframe,file_name)
   
   # 8) PCA Impute
-  file_name <- paste("PCA_imp_",".csv", sep = file_ref)
+  #file_name <- paste("PCA_imp_",".csv", sep = file_ref)
   #ncp_pca <- estim_ncpPCA(s,method.cv="loo")$ncp
-  pca_imp <- imputePCA(data, ncp = 1)
-  data_imputed <- pca_imp$completeObs
-  write.csv(data_imputed,file_name)
+  #pca_imp <- imputePCA(data, ncp = 1)
+  #data_imputed <- pca_imp$completeObs
+  #write.csv(data_imputed,file_name)
   
   # 9) K Means Cluster Impute
-  file_name <- paste("Cluster_imp_",".csv", sep = file_ref)
-  results <- MCS(data.matrix(data), nc = 38, method1 = "kmeans", 
-                 method2 = "ward.D2", index = "rand")
+  #file_name <- paste("Cluster_imp_",".csv", sep = file_ref)
+  #results <- MCS(data.matrix(data), nc = 38, method1 = "kmeans", 
+                 #method2 = "ward.D2", index = "rand")
   
         # Impute missing values using ClustImpute with cluster information
-  data_imputed <- ClustImpute(data,nr_cluster = 7, nr_iter = 10)
-  write.csv(data_imputed$complete_data,file_name)
+  #data_imputed <- ClustImpute(data,nr_cluster = 7, nr_iter = 10)
+  #write.csv(data_imputed$complete_data,file_name)
+  
+  stopCluster(cl)
 }
 
 ################# Main #####################
 
-data1 <- read.table("~/Desktop/Coursework/Missing Data/countdata5.txt", header = T, row.names = 1)
-data2 <- read.table("~/Desktop/Coursework/Missing Data/countdata10.txt", header = T, row.names = 1)
-data3 <- read.table("~/Desktop/Coursework/Missing Data/countdata30.txt", header = T, row.names = 1)
+data1 <- read.table("~/Missing Data Challenge/countdata5.txt", header = T, row.names = 1)
+#data2 <- read.table("~/Missing Data Challenge/countdata10.txt", header = T, row.names = 1)
+#data3 <- read.table("~/Missing Data Challenge/countdata30.txt", header = T, row.names = 1)
+
 
 # Loads and Installs Necessary packages
 install_and_load()
 # Imputes 5% Missing Dataset
-multi_impute(data=data1,s="5")
+multi_impute(data=data1,file_ref="5")
 # Imputes 10% Missing Dataset
-multi_impute(data=data2,s="10")
+#multi_impute(data=data2,file_ref="10")
 # Imputes 30% Missing Dataset
-multi_impute(data=data3,s="30")
+#multi_impute(data=data3,file_ref="30")
+
+
+
 
