@@ -28,7 +28,8 @@ datasets <- list(
   "C:/Users/Sammy/Documents/Missing data/Imputations/30 percent/PCA_imputation_30_2024-06-24.csv" = "PCA_imputation_30",
   "C:/Users/Sammy/Documents/Missing data/Imputations/30 percent/RegLLs_imputation_30_2024-06-24.csv" = "RegLLs_imputation_30",
   "C:/Users/Sammy/Documents/Missing data/Imputations/30 percent/SVD_imp_30_2024-06-24.csv" = "SVD_imputation_30",
-  "C:/Users/Sammy/Documents/Missing data/Imputations/30 percent/XGB_imp_30.csv" = "XGB_imp_30"
+  "C:/Users/Sammy/Documents/Missing data/Imputations/30 percent/XGB_imp_30.csv" = "XGB_imp_30",
+  "C:/Users/Sammy/Documents/Missing data/Imputations/30 percent/Knn_Impute_30.csv" = "Knn_Impute_30"
 )
 
 # Collect all unique genes from all datasets
