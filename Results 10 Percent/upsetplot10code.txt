@@ -1,0 +1,86 @@
+# Install and load the necessary libraries
+if (!requireNamespace("UpSetR", quietly = TRUE)) {
+    install.packages("UpSetR")
+}
+if (!requireNamespace("reshape2", quietly = TRUE)) {
+    install.packages("reshape2")
+}
+if (!requireNamespace("dplyr", quietly = TRUE)) {
+    install.packages("dplyr")
+}
+
+library(UpSetR)
+library(reshape2)
+library(dplyr)
+
+# Function to clean the "X" gene identifier from a dataset
+clean_x_gene <- function(file_path) {
+    df <- read.csv(file_path)
+    if ("X" %in% colnames(df)) {
+        df <- df[!df$X == "X", ]  # Remove rows where "X" column has the value "X"
+        df <- df[, -1]  # Remove the "X" column
+        write.csv(df, file_path, row.names = FALSE)
+        message("Cleaned 'X' from: ", file_path)
+    }
+}
+
+# Clean the amelia_imp_10_.csv file
+clean_x_gene("C:/Users/Sammy/Documents/Missing data/Imputations/10 percent/amelia_imp_10_.csv")
+
+# Define function to extract genes
+extract_genes <- function(file_path) {
+    df <- read.csv(file_path)
+    df$id <- 1:nrow(df)
+    df_long <- melt(df, id.vars = 'id', variable.name = 'Gene', value.name = 'Expression')
+    df_long$Expression <- suppressWarnings(as.numeric(as.character(df_long$Expression)))
+    df_long <- df_long %>% filter(!is.na(Expression) & !is.infinite(Expression) & !is.nan(Expression))
+    genes <- unique(as.character(df_long$Gene))
+    return(genes)
+}
+
+# Extract genes from each file and create the genes list
+file_paths <- list(
+    "amelia" = "C:/Users/Sammy/Documents/Missing data/Imputations/10 percent/amelia_imp_10_.csv",
+    "clust" = "C:/Users/Sammy/Documents/Missing data/Imputations/10 percent/ClustImpute_10_2024-06-24.csv",
+    "missforest" = "C:/Users/Sammy/Documents/Missing data/Imputations/10 percent/missforest_imp_10_.csv",
+    "pca" = "C:/Users/Sammy/Documents/Missing data/Imputations/10 percent/PCA_imputation_10_2024-06-24.csv",
+    "reglls" = "C:/Users/Sammy/Documents/Missing data/Imputations/10 percent/RegLLs_imputation_10_2024-06-24.csv",
+    "svd" = "C:/Users/Sammy/Documents/Missing data/Imputations/10 percent/SVD_imp_10_2024-06-24.csv",
+    "xgb" = "C:/Users/Sammy/Documents/Missing data/Imputations/10 percent/XGB_imp_10.csv",
+    "knn" = "C:/Users/Sammy/Documents/Missing data/Imputations/10 percent/KNN_imp_10_.csv",
+    "mice" = "C:/Users/Sammy/Documents/Missing data/Imputations/10 percent/mice_imp_10_2024-06-24.csv"
+)
+
+genes_list <- list()
+
+for (name in names(file_paths)) {
+    file_path <- file_paths[[name]]
+    if (file.exists(file_path)) {
+        genes_list[[name]] <- extract_genes(file_path)
+    } else {
+        message("File not found: ", file_path, " - Skipping...")
+    }
+}
+
+# Remove genes_list entries with NULL values (due to missing files)
+genes_list <- genes_list[!sapply(genes_list, is.null)]
+
+# Convert the list into a binary presence/absence matrix
+genes_df <- fromList(genes_list)
+
+# Generate the UpSet plot
+upset(genes_df, order.by = "freq", nsets = length(genes_list))
+
+# Combine all genes into a single vector
+all_genes <- unlist(genes_list)
+
+# Get unique gene names
+unique_genes <- unique(all_genes)
+
+# Print the unique gene names and their count
+print(unique_genes)
+cat("Number of unique genes:", length(unique_genes), "\n")
+
+# Check for duplicates
+duplicated_genes <- all_genes[duplicated(all_genes)]
+print(duplicated_genes)
