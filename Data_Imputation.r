@@ -1,10 +1,11 @@
-# data sctructure - Gene Expression Matrix
-# Column (SRR7538444) represent sample
-# Row (ENSMUSG00002075870) represent the genes
 # DATA IMPUTATION HANDBOOK 
 # Contributors - Athira Anandan, Usama Khan, Isobel Kate Donneley, Kaustubh Murali Prakash
 # Group B
 # For more info - https://github.com/Sirczechs-Kaustubh/Missing-Data-Imputation
+########## META DATA ##########
+# data sctructure - Gene Expression Matrix
+# Column (SRR7538444) represent sample
+# Row (ENSMUSG00002075870) represent the genes
 
 ######################## Data Visualization ####################
 
